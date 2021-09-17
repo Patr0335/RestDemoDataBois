@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Webshop</title>
+</head>
+<body>
+<div>
+  <h1>Product list</h1>
+
+  <table class="table">
+    <thead>
+    <tr>
+      <th scope="col">Product Name</th>
+      <th scope="col">Price</th>
+      <th scope="col"></th>
+      <th scope="col"></th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="product : ${products}" scope="row">
+      <td th:text="${product.name}">kaffe</td>
+      <td th:text="${product.price}">35</td>
+      <td><a th:href="@{'/update/' + ${product.id}}" class="btn btn-warning">Update</a></td>
+      <td><a th:href="@{'/delete/' + ${product.id}}" class="btn btn-danger">Delete</a></td>
+    </tr>
+    </tbody>
+  </table>
+  <a href="createProduct">Create Product</a>
+</div>
+</body>
+</html>
