@@ -9,6 +9,8 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+
 
 @RestController
 public class ProductController {
@@ -25,48 +27,72 @@ public class ProductController {
     public ResponseEntity<List<Product>> findAll() {
         List<Product> products = new ArrayList<>();
         productRepository.findAll().forEach(products::add);
+        //ResponseEntitiy builder - først status OK/200- så til sidst body. body=collection of products
         return ResponseEntity.status(HttpStatus.OK).body(products);
     }
 
-    //HTTP POST (/products)
-    @PostMapping("/createProduct")
-    Product newProduct(@RequestBody Product newProduct) {
-        return productRepository.save(newProduct);
-    }
-
+    //findById anden metode
     @GetMapping("/products/{id}")
-    Product one(@PathVariable Long id) {
+    public ResponseEntity<Optional<Product>> findById(@PathVariable Long id) {
+        //Hent product fra repository
+        Optional<Product> optionalProduct = productRepository.findById(id);
 
-        return productRepository.findById(id)
-                .orElseThrow(() -> new ProductNotFoundException(id));
+        if (optionalProduct.isPresent()) {
+            return ResponseEntity.status(HttpStatus.OK).body(optionalProduct);
+        } else {
+            //not found 404
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(optionalProduct);
+        }
     }
 
-    @PutMapping("/products/{id}")
-    Product updateProduct(@RequestBody Product newProduct, @PathVariable Long id) {
-
-        return productRepository.findById(id)
-                .map(product -> {
-                    product.setName(newProduct.getName());
-                    product.setPrice(newProduct.getPrice());
-                    return productRepository.save(product);
-                })
-                .orElseGet(() -> {
-                    newProduct.setId(id);
-                    return productRepository.save(newProduct);
-                });
+    //HTTP POST (/products) - create
+    @CrossOrigin(origins = "*", exposedHeaders = "Location")
+    @PostMapping(value = "")
+    public ResponseEntity<Product> create(@RequestBody Product product) {
+// hvis id sat, så return "bad request"
+        if (product.getId() != null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
+        //opret et nyt product i JPA
+        Product newProduct = productRepository.save(product);
+        return ResponseEntity.status(HttpStatus.CREATED).header("Location", "/products/" + newProduct.getId()).body(newProduct);
     }
 
-    @DeleteMapping("/delete/{id}")
-    void deleteEmployee(@PathVariable Long id) {
-        productRepository.deleteById(id);
+    @PutMapping("products/{id}")
+    public ResponseEntity<String> update(@PathVariable Long id, @RequestBody Product product){
+        //findes produktet?
+        Optional<Product> optionalStudent = productRepository.findById(id);
+        if (optionalStudent.isPresent()){
+            //er path id og product object id identiske? ellers returner BAD_REQUEST
+            if (id.equals(product.getId())){
+                //product findes så opdater
+                product.setId(id);
+                productRepository.save(product);
+                return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+            }
+            else{
+                //forskel på path id og product object id
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            }
+        }
+        else{
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 
-//    @RequestMapping("/")
-//    public ModelAndView index () {
-//        ModelAndView modelAndView = new ModelAndView();
-//        modelAndView.setViewName("index");
-//        return modelAndView;
-//    }
+
+    @DeleteMapping("products/{id}")
+    public ResponseEntity<String> delete(@PathVariable Long id){
+        Optional<Product> optionalStudent = productRepository.findById(id);
+        if (optionalStudent.isPresent()){
+            productRepository.deleteById(id);
+            return ResponseEntity.status(HttpStatus.OK).build();
+        }
+        else{
+            //not found
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
 
 
 
