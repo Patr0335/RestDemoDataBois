@@ -47,15 +47,21 @@ public class ProductController {
 
     //HTTP POST (/products) - create
     @CrossOrigin(origins = "*", exposedHeaders = "Location")
-    @PostMapping(value = "")
+    @PostMapping( "/products")
     public ResponseEntity<Product> create(@RequestBody Product product) {
 // hvis id sat, så return "bad request"
         if (product.getId() != null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
         //opret et nyt product i JPA
         Product newProduct = productRepository.save(product);
-        return ResponseEntity.status(HttpStatus.CREATED).header("Location", "/products/" + newProduct.getId()).body(newProduct);
+
+        //location header: /products/{id}
+        String location = "/products/" + newProduct.getId();
+
+        //HttpsStatus created 201
+        return ResponseEntity.status(HttpStatus.CREATED).header("Location", location)
+                .body(newProduct);
     }
 
     @PutMapping("products/{id}")
